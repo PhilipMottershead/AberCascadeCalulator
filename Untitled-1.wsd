@@ -1,0 +1,27 @@
+@startuml schema
+
+class Module {
+ moduleCode : String
+ name : String
+ year : int
+ credits : int
+ confirmed : bool
+ semester : int
+}
+
+class Student {
+ id : int
+ name : String
+ modules: Module[] 
+}
+
+class Schema {
+    id : String
+    name : name
+    lenght
+    coreModules : Module[]
+}
+
+Student *..* Module
+
+@enduml
