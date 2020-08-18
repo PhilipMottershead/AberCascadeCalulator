@@ -4,140 +4,119 @@ from requests_html import HTMLSession
 import sqlite3
 from sqlite3 import Error
 import database
+import module_crawler
 
-def get_year(id):
-    split = id[2:3]
-    return split
+def get_award(title):
+    award = title.split("\xa0")[0]
+    return award
 
-def get_credits(id):
-    split = id[5:]
-    return int(split)
+def get_scheme_id(title):
+    scheme_id = title.split("[")[1]
+    scheme_id = scheme_id[:-1]
+    print(scheme_id)
+    return scheme_id
 
-def get_departmentCode(id):
-    split = id[0:1]
-    return split
+def get_title(title):
+    title = title.split("\xa0")[1]
+    title = title.split(" [")[0]
+    return title
 
-def get_moduleCode(id):
-    split = id[3:5]
-    return split
+def format_duration(duration):
+    duration = duration.split(": ")[1]
+    return int(duration[0])
 
-def get_semester(semester_string):
-    if semester_string == "Semester 1":
-        return 1
-    elif semester_string == "Semester 2":
-        return 2
-    elif semester_string == "Semester 1 (Taught over 2 semesters)":
-        return 1
-    else:
-        print(semester_string)
+def get_post_or_under_grad(post_or_under):
+    if("Undergraduate Study Schemes" in post_or_under):
+        return "Undergraduate"
+    elif("Postgraduate Study Schemes" in post_or_under):
+        return "Postgraduate"
 
-def get_module_info(url, department):
-    module_session = session.get(url)
-    module1 = []
-    module_data = module_session.html.find("div.module-x-container")[0]
-    key = module_data.find("div.module-x-column-left")
-    value = module_data.find("div.module-x-column-right")
-    
-    key = [key[i].text for i in range(len(key))]
-    value = [value[i].text for i in range(len(value))]
-    year = get_year(value[0])
-    num_credits = get_credits(value[0])
-    key.append("year")
-    key.append("credits")
-    value.append(year)
-    value.append(num_credits)
-    
-    res = {key[i]: value[i] for i in range(len(key))}   
-    
-    if key[0]=="Cod y Modiwl":
-        module1 = [res['Cod y Modiwl'],res['Teitl y Modiwl'],res['Cyd-gysylltydd y Modiwl'],res['Semester'],res['year'],department.text,res['credits'],True]
-    else:
-        module1 = [res['Module Identifier'],res['Module Title'],res['Co-ordinator'],res['Semester'],res['year'],department.text,res['credits'],False]
-    
-    return module1
+def get_academic_year(year):
+    return year.split(": ")[1]
 
-def vet_schemes():
-    print("Vet")
+def is_core(title):
+    if "Timetable Core" in title:
+        return "Core Option"
+    elif "Core" in title:
+        return "Core"
+    elif "Option" in title:
+        return "Option"
+    elif "Electives" in title:
+        return "Electives"
 
-def dis_schemes():
-    print("Dis")
 
-def find_box(boxes,text):
-    for box in boxes:
-            if box.find("h2")[0].text == text:
-                return box
-
-def get_modules(url_head):
-    main_session = session.get(url_head)
-    content_element = main_session.html.find('div.content.ue')[0]
-    department_element_list =content_element.find("a")
-
-    for department in department_element_list:
-        department_url = url_head + department.attrs['href']
-        department_session = session.get(department_url)
-        content_department = department_session.html.find('div.content.ue')[0]
-        module_links =content_department.find("div")[0].links
-        module_urls = []
-        for link in module_links:
-            module_urls.append(department_url+link)
-        for url in module_urls:
-            module = get_module_info(url)
-            if(database.check_if_module_exists(conn,module[0]) == False):
-                database.create_module(conn,module,department)
-            else:
-                print("Error")
-database_url = r"/home/philip/Cascade/cascade.db"
+database_url = r"/home/philip/Cascade/Aber_Cascade_Calulator/cascade.db"
 conn = database.create_connection(database_url)
 database.create_module_table(conn)
-
+database.create_scheme_table(conn)
+database.create_scheme_module_table(conn)
 session = HTMLSession()
-modules_url_head = 'https://www.aber.ac.uk/en/modules/deptcurrent/'
-# get_modules(modules_url_head)
-vet = "/en/vet-sci/"
-dis = "/en/dis/"
-english = "/en/international-english/"
-learn_welsh = "/en/learn-welsh/"
-lifelong_Learning = "/en/lifelong-learning/"
-department_url_head = "https://www.aber.ac.uk/en/departments/"
+modules_url_head = 'https://www.aber.ac.uk/en/modules/deptfuture/'
+# module_crawler.get_modules(modules_url_head,conn)
+
+department_url_head = "https://www.aber.ac.uk/en/study-schemes/deptfuture/"
 main_session = session.get(department_url_head)
-content_element = main_session.html.find('div.content.ue')[1]
+content_element = main_session.html.find('div.content.ue',first=True)
 departments = content_element.find('a')
-department_head = "https://www.aber.ac.uk"
+
+
+
 
 for department in departments:
     url = department.attrs['href']
-    department_session = session.get(department_head+department.attrs['href'])
-    if url==learn_welsh or url == lifelong_Learning or url == english:
-        print("ignore")
-    elif url == vet:
-        vet_schemes()
-    elif url == dis:
-        dis_schemes()
-    elif url == "/en/tfts/":
-        print("/en/tfts/")
-    elif url == "/en/modernlangs/":
-        print("http:"+box1.find("a")[0].attrs['href'])
-        print("http:"+box1.find("a")[0].attrs['href'])
-    else:
-        boxes = department_session.html.find("div.feature-box-image")
-        box1 = find_box(boxes,"Undergraduate courses")
-        box2 = find_box(boxes,"Postgraduate courses")
-        undergrad_url = box1.find("a")[0].attrs['href']
-        postgrad_url = box2.find("a")[0].attrs['href']
+    department_session = session.get(department_url_head + department.attrs['href'])
+    main_content = department_session.html.find('div.content.ue')[0].find()
+    post_or_under = ""
+    scheme_type = ""
+    a = ""
+    for element in main_content:
+        if(element.tag=='h3'):
+            post_or_under = get_post_or_under_grad(element.text)
+        elif(element.tag=='h4'):
+            scheme_type = element.text
+        elif(element.tag=='a'):
+            a = element.attrs['href']
+            scheme_url = department_url_head+url+a
+            scheme_session = session.get(scheme_url).html
+            full_title = scheme_session.find("h2",first=True).text
+            award = get_award(full_title)
+            title = get_title(full_title)
+            scheme_id = get_scheme_id(full_title)
+            year =  scheme_session.find("span.ac_year",first=True).text
+            year = get_academic_year(year)
+            duration = scheme_session.find("p")[3].text
+            duration =format_duration(duration)
+            scheme = [scheme_id,title,award,department.text,post_or_under,scheme_type,duration,year,scheme_url]
+            if(database.check_if_scheme_exists(conn,scheme[0]) == False):
+                database.create_scheme(conn, scheme)            
+            else:
+                print("Already Exists")
+            
+            scheme_rule_data = scheme_session.find("div.content.ue",first=True)
+            core = ""
 
-        subject_session = session.get(undergrad_url)
-        subject_list = subject_session.html.find("ul.list-link-menu")
-        if (len(subject_list)!=0):
-            for li in subject_list[0].find("li"):
-                url = li.find("a")[0].attrs['href']
-                scheme_session = session.get(department_head + url)
-                single = scheme_session.html.find("a")
-                for s in single:
-                    print(s.attrs['title'])
-
-        else:
-            for li in subject_session.html.find("li"):
-                s = subject_session.html.find("div.course-search-listing.list-listing")[0]
-                ass = s.find("a")
-                for a in ass:
-                    print(a.attrs['title'])
+            for html_element in scheme_rule_data.find():
+                if "class" in html_element.attrs:
+                    div_class  = html_element.attrs["class"][0]
+                    if(div_class=="schemes-x-year-options"):
+                        # part_type_title = html_element.find("h3",first=True)
+                        # if part_type_title:
+                        #     print(part_type_title.text)
+                        credit_type_title = html_element.find("h4",first=True)
+                        if credit_type_title:
+                            core = is_core(credit_type_title.text)
+                            
+                    elif(div_class=="scheme-twocol-x-both-cols"):
+                        col1 = html_element.find("div.scheme-twocol-x-col.scheme-twocol-x-col1",first=True)
+                        col2 = html_element.find("div.scheme-twocol-x-col.scheme-twocol-x-col2",first=True)
+                        if col1 :
+                            sesester1 = col1.find("strong",first=True)
+                            modules_list = col1.find("a")
+                            for m in modules_list:
+                                print(core)
+                                database.create_scheme_module(conn,[m.text,scheme_id,core])
+                        elif  col2 :
+                            sesester2 = col2.find("strong",first=True)
+                            modules_list = col2.find("a")
+                            for m in modules_list:
+                                    database.create_scheme_module(conn,[m.text,scheme_id,core])

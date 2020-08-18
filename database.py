@@ -9,11 +9,40 @@ sql_create_module_table = """ CREATE TABLE IF NOT EXISTS module (
                                         year text,
                                         department text,
                                         credits interger,
-                                        welsh bool
+                                        welsh bool,
+                                        url text
                                     ); """
+
+sql_create_scheme_table = """ CREATE TABLE IF NOT EXISTS scheme (
+                                        scheme_id text PRIMARY KEY,
+                                        title text,
+                                        award text,
+                                        department text,
+                                        undergraduate_or_postgraduate text,
+                                        scheme_type text,
+                                        year interger,
+                                        duration interger,
+                                        url text
+                                    ); """
+
+sql_create_scheme_module_table = """ CREATE TABLE IF NOT EXISTS scheme_module (
+                                        scheme_id text, 
+                                        module_id text,
+                                        module_type text,
+                                        FOREIGN KEY (scheme_id) REFERENCES scheme(scheme_id),
+                                        FOREIGN KEY (module_id) REFERENCES module(module_id)
+                                    ); """
+
 
 def create_module_table(conn):
     create_table(conn,sql_create_module_table)
+
+def create_scheme_table(conn):
+    create_table(conn,sql_create_scheme_table)
+
+def create_scheme_module_table(conn):
+    create_table(conn,sql_create_scheme_module_table)
+
 
 def create_connection(db_file):
     """ create a database connection to the SQLite database
@@ -49,8 +78,8 @@ def create_module(conn, module):
     :param project:
     :return: project id
     """
-    sql = ''' INSERT INTO module(module_id,title,coordinator,semester,year,department,credits,welsh)
-              VALUES(?,?,?,?,?,?,?,?) '''
+    sql = ''' INSERT INTO module(module_id,title,coordinator,semester,year,department,credits,welsh,url)
+              VALUES(?,?,?,?,?,?,?,?,?) '''
     cur = conn.cursor()
     print(module[0])
 
@@ -58,8 +87,44 @@ def create_module(conn, module):
     conn.commit()
     return cur.lastrowid
 
+def create_scheme(conn, scheme):
+    """
+    Create a new project into the projects table
+    :param conn:
+    :param project:
+    :return: project id
+    """
+    sql = ''' INSERT INTO scheme(scheme_id,title,award,department,undergraduate_or_postgraduate,scheme_type
+,duration,year,url) VALUES(?,?,?,?,?,?,?,?,?) '''
+    cur = conn.cursor()
+    cur.execute(sql, scheme)
+    conn.commit()
+    return cur.lastrowid
+
+def create_scheme_module(conn, scheme_module):
+    """
+    Create a new project into the projects table
+    :param conn:
+    :param project:
+    :return: project id
+    """
+    sql = ''' INSERT INTO scheme_module(scheme_id,module_id,module_type)
+              VALUES(?,?,?) '''
+    cur = conn.cursor()
+    cur.execute(sql, scheme_module)
+    conn.commit()
+    return cur.lastrowid
+
+
 def check_if_module_exists(conn, id):
     retur = conn.execute('SELECT * FROM module WHERE module_id = "%s"'%id)  
+    if len(retur.fetchall())>0 :
+        return True
+    else:
+        return False
+
+def check_if_scheme_exists(conn, id):
+    retur = conn.execute('SELECT * FROM scheme WHERE scheme_id = "%s"'%id)  
     if len(retur.fetchall())>0 :
         return True
     else:
