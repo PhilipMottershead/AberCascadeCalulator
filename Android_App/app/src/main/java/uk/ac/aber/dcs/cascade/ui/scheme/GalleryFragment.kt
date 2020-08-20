@@ -1,4 +1,4 @@
-package uk.ac.aber.dcs.cascade.ui.gallery
+package uk.ac.aber.dcs.cascade.ui.scheme
 
 import android.os.Bundle
 import android.view.LayoutInflater

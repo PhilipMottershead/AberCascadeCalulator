@@ -13,13 +13,13 @@
 
     <fragment
         android:id="@+id/nav_gallery"
-        android:name="uk.ac.aber.dcs.cascade.ui.gallery.GalleryFragment"
+        android:name="uk.ac.aber.dcs.cascade.ui.scheme.GalleryFragment"
         android:label="@string/menu_gallery"
         tools:layout="@layout/fragment_gallery" />
 
     <fragment
         android:id="@+id/nav_slideshow"
-        android:name="uk.ac.aber.dcs.cascade.ui.slideshow.SlideshowFragment"
+        android:name="uk.ac.aber.dcs.cascade.ui.module.SlideshowFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
 </navigation>

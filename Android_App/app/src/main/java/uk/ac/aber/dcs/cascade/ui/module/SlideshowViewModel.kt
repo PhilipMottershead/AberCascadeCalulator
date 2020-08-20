@@ -1,4 +1,4 @@
-package uk.ac.aber.dcs.cascade.ui.slideshow
+package uk.ac.aber.dcs.cascade.ui.module
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
